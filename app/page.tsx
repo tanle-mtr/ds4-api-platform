@@ -1,112 +1,212 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import SearchForm from '@/components/SearchForm';
-import CurrencyBar from '@/components/CurrencyBar';
-import ResultSection from '@/components/ResultSection';
-import { DEFAULT_TLDS } from '@/lib/tlds';
-import type { AvailabilityResult } from '@/lib/rdap';
-import {
-  DEFAULT_USD_TO_CNY_RATE,
-  type CurrencyCode,
-} from '@/lib/currency';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Model } from '@/types';
+
+const models: Model[] = [
+  {
+    id: 'llama-3-70b',
+    name: 'Llama 3 70B',
+    provider: 'Meta',
+    license: 'Apache-2.0',
+    description: "Meta's Llama 3 70B parameter model",
+    maxTokens: 8192,
+    pricing: { free: 0.01, professional: 0.002, team: 0.001 },
+    isAvailable: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: 'qwen-72b',
+    name: 'Qwen 72B',
+    provider: 'Alibaba',
+    license: 'Apache-2.0',
+    description: "Alibaba's Qwen 72B parameter model",
+    maxTokens: 8192,
+    pricing: { free: 0.01, professional: 0.002, team: 0.001 },
+    isAvailable: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+  {
+    id: 'deepseek-coder',
+    name: 'DeepSeek Coder',
+    provider: 'DeepSeek',
+    license: 'MIT',
+    description: 'DeepSeek Coder model optimized for coding tasks',
+    maxTokens: 8192,
+    pricing: { free: 0.005, professional: 0.001, team: 0.0005 },
+    isAvailable: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
+];
 
 export default function Home() {
-  const [name, setName] = useState('');
-  const [tlds, setTlds] = useState<string[]>(DEFAULT_TLDS);
-  const [results, setResults] = useState<AvailabilityResult[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [currency, setCurrency] = useState<CurrencyCode>('USD');
-  const [rate, setRate] = useState(DEFAULT_USD_TO_CNY_RATE);
-
-  useEffect(() => {
-    const savedCurrency = localStorage.getItem('dp-currency');
-    if (savedCurrency === 'USD' || savedCurrency === 'CNY') {
-      setCurrency(savedCurrency);
-    }
-    const savedRate = parseFloat(localStorage.getItem('dp-rate') ?? '');
-    if (!Number.isNaN(savedRate) && savedRate > 0) {
-      setRate(savedRate);
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('dp-currency', currency);
-  }, [currency]);
-
-  useEffect(() => {
-    localStorage.setItem('dp-rate', String(rate));
-  }, [rate]);
-
-  const handleSearch = useCallback(async (n: string, ts: string[]) => {
-    setLoading(true);
-    setError(null);
-    setResults(null);
-    try {
-      const res = await fetch('/api/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: n, tlds: ts }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || '查询失败，请稍后重试');
-      }
-      setName(n);
-      setTlds(ts);
-      setResults(data.results);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   return (
-    <main className="mx-auto max-w-5xl px-4 py-10">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold sm:text-4xl">
-          域名价格查询
-        </h1>
-        <p className="mt-2 text-slate-400">
-          输入一个名称，对比主流注册商的首年与续费价格
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Header */}
+      <header className="border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xl">DS4</span>
+            </div>
+            <span className="text-xl font-bold text-gray-900 dark:text-white">DS4 API Platform</span>
+          </div>
+          <nav className="flex items-center gap-4">
+            <Link href="/docs">
+              <Button variant="ghost">文档</Button>
+            </Link>
+            <Link href="/console">
+              <Button variant="ghost">控制台</Button>
+            </Link>
+            <Link href="/admin">
+              <Button>管理后台</Button>
+            </Link>
+          </nav>
+        </div>
       </header>
 
-      <CurrencyBar
-        currency={currency}
-        rate={rate}
-        onCurrency={setCurrency}
-        onRate={setRate}
-      />
+      {/* Hero Section */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6">
+            基于 DS4 的 API 开放平台
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+            支持多模型、配额管理和 OpenAI 兼容接口，提供企业级的 AI 服务
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <Link href="/docs">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                开始使用
+              </Button>
+            </Link>
+            <Link href="/admin">
+              <Button size="lg" variant="outline">
+                管理后台
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
 
-      <SearchForm
-        loading={loading}
-        onSearch={handleSearch}
-        initialName={name}
-        initialTlds={tlds}
-      />
+      {/* Features Section */}
+      <section className="container mx-auto px-4 py-16">
+        <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
+          核心功能
+        </h2>
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle>多模型支持</CardTitle>
+              <CardDescription>
+                支持多种开源大模型，包括 Llama、Qwen、DeepSeek 等
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {models.map((model) => (
+                  <li key={model.id} className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm">{model.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
 
-      {error && (
-        <p className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-red-300">
-          {error}
-        </p>
-      )}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle>OpenAI 兼容</CardTitle>
+              <CardDescription>
+                提供完全兼容 OpenAI 的 API 接口，支持流式和非流式响应
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">/v1/chat/completions</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">流式响应支持</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">标准 OpenAI 格式</span>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
 
-      {loading && (
-        <p className="mt-8 text-center text-slate-400">
-          正在查询 {tlds.length} 个后缀，请稍候…
-        </p>
-      )}
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle>配额管理</CardTitle>
+              <CardDescription>
+                基于 Upstash Redis 的配额管理系统，支持按月重置
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">API Key 鉴权</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">实时用量统计</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">灵活套餐定价</span>
+                </li>
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
 
-      {results && !loading && (
-        <ResultSection results={results} currency={currency} rate={rate} />
-      )}
+      {/* API Section */}
+      <section className="container mx-auto px-4 py-16">
+        <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
+          快速开始
+        </h2>
+        <div className="max-w-3xl mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>使用示例</CardTitle>
+              <CardDescription>
+                使用您的 API Key 调用 OpenAI 兼容的接口
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto">
+{`curl -X POST https://api.your-domain.com/v1/chat/completions \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer sk-ds4-your-api-key" \\
+  -d '{
+    "model": "llama-3-70b",
+    "messages": [
+      {"role": "user", "content": "你好，请介绍一下自己"}
+    ]
+  }'`}
+              </pre>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
 
-      <footer className="mt-16 text-center text-xs text-slate-600">
-        价格信息为公开参考价快照，实际以各注册商结算为准
+      {/* Footer */}
+      <footer className="border-t border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-8 text-center text-gray-600 dark:text-gray-400">
+          <p>&copy; 2024 DS4 API Platform. All rights reserved.</p>
+        </div>
       </footer>
-    </main>
+    </div>
   );
 }
