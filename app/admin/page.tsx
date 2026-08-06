@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Model, User, Subscription, PaymentChannelConfig, PaymentConfig } from '@/types';
 import { LicenseValidator } from '@/lib/license';
 import { getDefaultChannels } from '@/lib/paymentConfig';
+import { ServiceUsersPanel } from '@/components/admin/ServiceUsersPanel';
+import { AdminSettingsPanel } from '@/components/admin/AdminSettingsPanel';
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState<'models' | 'users' | 'subscriptions' | 'revenue' | 'payment'>('models');
+  const [activeTab, setActiveTab] = useState<'models' | 'serviceUsers' | 'subscriptions' | 'revenue' | 'payment' | 'settings'>('models');
   const [models, setModels] = useState<Model[]>([]);
   const [newModel, setNewModel] = useState<Partial<Model>>({});
   const [users, setUsers] = useState<User[]>([]);
@@ -66,39 +68,6 @@ export default function Admin() {
             team: 0.001,
           },
           isAvailable: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ]);
-
-      setUsers([
-        {
-          id: 'user-1',
-          casdoorId: 'casdoor-user-1',
-          email: 'user1@example.com',
-          name: '张三',
-          plan: 'professional',
-          quota: {
-            total: 5000000,
-            used: 1250000,
-            resetDate: new Date(),
-          },
-          apiKey: 'sk-ds4-user1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: 'user-2',
-          casdoorId: 'casdoor-user-2',
-          email: 'user2@example.com',
-          name: '李四',
-          plan: 'team',
-          quota: {
-            total: 10000000,
-            used: 5000000,
-            resetDate: new Date(),
-          },
-          apiKey: 'sk-ds4-user2',
           createdAt: new Date(),
           updatedAt: new Date(),
         },
@@ -241,12 +210,6 @@ export default function Admin() {
     ));
   };
 
-  const handleDeleteUser = (userId: string) => {
-    if (confirm('确定要删除这个用户吗？')) {
-      setUsers(users.filter(u => u.id !== userId));
-    }
-  };
-
   const handleDeleteSubscription = (subscriptionId: string) => {
     if (confirm('确定要删除这个订阅吗？')) {
       setSubscriptions(subscriptions.filter(s => s.id !== subscriptionId));
@@ -337,10 +300,10 @@ export default function Admin() {
             模型管理
           </Button>
           <Button
-            variant={activeTab === 'users' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('users')}
+            variant={activeTab === 'serviceUsers' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('serviceUsers')}
           >
-            用户管理
+            服务用户
           </Button>
           <Button
             variant={activeTab === 'subscriptions' ? 'default' : 'outline'}
@@ -359,6 +322,12 @@ export default function Admin() {
             onClick={() => setActiveTab('payment')}
           >
             收款设置
+          </Button>
+          <Button
+            variant={activeTab === 'settings' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('settings')}
+          >
+            系统设置
           </Button>
         </div>
 
@@ -490,52 +459,9 @@ export default function Admin() {
           </Card>
         )}
 
-        {/* Users Tab */}
-        {activeTab === 'users' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>用户管理</CardTitle>
-              <CardDescription>
-                管理平台用户和配额
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {users.map(user => (
-                  <div key={user.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
-                        {user.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="font-medium">{user.name}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{user.email}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        user.plan === 'free' ? 'bg-gray-100 text-gray-800' :
-                        user.plan === 'professional' ? 'bg-blue-100 text-blue-800' :
-                        'bg-purple-100 text-purple-800'
-                      }`}>
-                        {user.plan === 'free' ? '免费版' : user.plan === 'professional' ? '专业版' : '团队版'}
-                      </span>
-                      <code className="text-sm bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                        {user.apiKey}
-                      </code>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDeleteUser(user.id)}
-                      >
-                        删除
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Service Users Tab */}
+        {activeTab === 'serviceUsers' && (
+          <ServiceUsersPanel getAdminKey={getAdminKey} />
         )}
 
         {/* Subscriptions Tab */}
@@ -554,7 +480,7 @@ export default function Admin() {
                     <div>
                       <div className="font-medium">订阅 #{sub.id}</div>
                       <div className="text-sm text-gray-600 dark:text-gray-400">
-                        用户: {users.find(u => u.id === sub.userId)?.name || '未知'}
+                        用户 ID: {sub.userId}
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
@@ -734,6 +660,11 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Settings Tab */}
+        {activeTab === 'settings' && (
+          <AdminSettingsPanel getAdminKey={getAdminKey} onKeySaved={() => setPaymentStatus('')} />
         )}
       </div>
     </div>

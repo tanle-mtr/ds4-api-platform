@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OpenAIService } from '@/lib/openai';
+import { ServiceUserStore } from '@/lib/serviceUserStore';
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,11 +54,27 @@ export async function POST(request: NextRequest) {
 
     const apiKey = authHeader.substring(7);
 
+    const user = await ServiceUserStore.authenticate(apiKey);
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: {
+            message: 'Invalid API key',
+            type: 'invalid_request_error',
+            param: 'apiKey',
+            code: 'invalid_api_key',
+          },
+        },
+        { status: 401 }
+      );
+    }
+
     // Call OpenAI service
     if (stream) {
       const stream = await OpenAIService.streamChatCompletion(
         { model, messages, temperature, max_tokens },
-        apiKey
+        user.id,
+        user
       );
 
       const encoder = new TextEncoder();
@@ -87,7 +104,8 @@ export async function POST(request: NextRequest) {
       // Non-stream response
       const response = await OpenAIService.createChatCompletion(
         { model, messages, temperature, max_tokens },
-        apiKey
+        user.id,
+        user
       );
 
       return NextResponse.json(response);

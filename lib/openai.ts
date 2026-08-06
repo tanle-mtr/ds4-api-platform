@@ -1,4 +1,4 @@
-import { ChatCompletionRequest, ChatCompletionResponse, Model } from '@/types';
+import { ChatCompletionRequest, ChatCompletionResponse, Model, ServiceUser } from '@/types';
 import { QuotaManager } from './quota';
 import { LicenseValidator } from './license';
 
@@ -74,7 +74,7 @@ export class OpenAIService {
     return this.AVAILABLE_MODELS.find(m => m.id === modelId);
   }
 
-  static async createChatCompletion(request: ChatCompletionRequest, apiKey: string): Promise<ChatCompletionResponse> {
+  static async createChatCompletion(request: ChatCompletionRequest, userId: string, user?: ServiceUser): Promise<ChatCompletionResponse> {
     const model = this.getModelById(request.model);
     if (!model) {
       throw new Error(`Model '${request.model}' not found`);
@@ -88,12 +88,16 @@ export class OpenAIService {
       throw new Error(`Model '${model.name}' is currently unavailable`);
     }
 
+    const usageCheck = await QuotaManager.checkQuota(userId, 200);
+    if (!usageCheck.allowed) {
+      throw new Error(`Quota exceeded: ${usageCheck.remaining} tokens remaining`);
+    }
+
     // TODO: Implement actual model inference here
     // This would connect to the actual LLM provider
     const response = await this.mockInference(request, model);
 
     // Record usage
-    const userId = 'user-' + apiKey.slice(-8);
     await QuotaManager.incrementUsage(userId, response.usage.total_tokens, response.usage.total_tokens * model.pricing.professional);
 
     return response;
@@ -131,7 +135,7 @@ export class OpenAIService {
     return this.AVAILABLE_MODELS.filter(m => m.isAvailable);
   }
 
-  static async streamChatCompletion(request: ChatCompletionRequest, apiKey: string): Promise<AsyncIterable<string>> {
+  static async streamChatCompletion(request: ChatCompletionRequest, userId: string, user?: ServiceUser): Promise<AsyncIterable<string>> {
     const model = this.getModelById(request.model);
     if (!model) {
       throw new Error(`Model '${request.model}' not found`);
@@ -145,11 +149,15 @@ export class OpenAIService {
       throw new Error(`Model '${model.name}' is currently unavailable`);
     }
 
+    const usageCheck = await QuotaManager.checkQuota(userId, 200);
+    if (!usageCheck.allowed) {
+      throw new Error(`Quota exceeded: ${usageCheck.remaining} tokens remaining`);
+    }
+
     // TODO: Implement actual streaming inference here
     const stream = this.mockStream(request, model);
 
     // Record usage
-    const userId = 'user-' + apiKey.slice(-8);
     await QuotaManager.incrementUsage(userId, 200, 200 * model.pricing.professional);
 
     return stream;

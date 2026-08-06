@@ -97,6 +97,24 @@ export class QuotaManager {
     }
   }
 
+  static async setQuota(userId: string, total: number): Promise<void> {
+    const client = getRedis();
+    if (client) {
+      await client.set(`${QUOTA_PREFIX}${userId}`, total);
+    } else {
+      memSet(`${QUOTA_PREFIX}${userId}`, total);
+    }
+  }
+
+  static async setUsage(userId: string, used: number): Promise<void> {
+    const client = getRedis();
+    if (client) {
+      await client.set(`${USAGE_PREFIX}${userId}`, used);
+    } else {
+      memSet(`${USAGE_PREFIX}${userId}`, used);
+    }
+  }
+
   static async getUserPlan(userId: string): Promise<User['plan'] | null> {
     // In a real implementation, this would fetch from database
     // For now, return free as default

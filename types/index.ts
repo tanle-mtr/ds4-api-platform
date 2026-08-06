@@ -55,6 +55,22 @@ export interface User {
   updatedAt: Date;
 }
 
+export interface ServiceUser {
+  id: string;
+  name: string;
+  email: string;
+  plan: 'free' | 'professional' | 'team';
+  quota: {
+    total: number;
+    used: number;
+    resetDate: string;
+  };
+  apiKey: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Subscription {
   id: string;
   userId: string;

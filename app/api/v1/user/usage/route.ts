@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { QuotaManager } from '@/lib/quota';
+import { ServiceUserStore } from '@/lib/serviceUserStore';
 
 export async function GET(request: NextRequest) {
   try {
@@ -36,11 +37,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Extract user ID from API key
-    const userId = 'user-' + apiKey.slice(-8);
+    const user = await ServiceUserStore.authenticate(apiKey);
+    if (!user) {
+      return NextResponse.json(
+        {
+          error: {
+            message: 'Invalid API key',
+            type: 'invalid_request_error',
+            param: 'apiKey',
+            code: 'invalid_api_key',
+          },
+        },
+        { status: 401 }
+      );
+    }
 
     // Get usage stats
-    const usage = await QuotaManager.getUsageStats(userId);
+    const usage = await QuotaManager.getUsageStats(user.id);
 
     const response = {
       used: usage.used,

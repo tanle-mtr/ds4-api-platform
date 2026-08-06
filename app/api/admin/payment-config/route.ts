@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loadPublicPaymentConfig, savePaymentConfig, validatePaymentConfig } from '@/lib/paymentConfig';
+import { isAdmin } from '@/lib/adminKeyStore';
 import { PaymentConfig } from '@/types';
-
-// Simple admin guard. In production, replace with a proper Casdoor admin
-// role check. Uses an env-stored admin secret.
-function isAdmin(request: NextRequest): boolean {
-  const expected = process.env.ADMIN_API_KEY;
-  if (!expected) return false;
-  const provided = request.headers.get('x-admin-key');
-  return provided === expected;
-}
 
 export async function GET(request: NextRequest) {
   try {
-    if (!isAdmin(request)) {
+    if (!(await isAdmin(request))) {
       return NextResponse.json({ error: { message: 'Unauthorized', code: 'unauthorized' } }, { status: 401 });
     }
     const config = await loadPublicPaymentConfig();
@@ -26,7 +18,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    if (!isAdmin(request)) {
+    if (!(await isAdmin(request))) {
       return NextResponse.json({ error: { message: 'Unauthorized', code: 'unauthorized' } }, { status: 401 });
     }
     const body = (await request.json()) as PaymentConfig;
